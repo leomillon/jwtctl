@@ -43,7 +43,7 @@ object JwtServiceSpec : Spek({
             val exception = shouldThrow<InvalidArgumentException> {
                 readToken(expiredJwt)
             }
-            exception.message shouldBe startWith("JWT expired at 2018-01-31T23:59:49Z.")
+            exception.message shouldBe startWith("JWT expired at")
         }
 
         it("should read JWS token") {
@@ -59,7 +59,7 @@ object JwtServiceSpec : Spek({
             val exception = shouldThrow<InvalidArgumentException> {
                 readToken(expiredJws, secret)
             }
-            exception.message shouldBe startWith("JWT expired at 2018-01-31T23:51:42Z")
+            exception.message shouldBe startWith("JWT expired at")
         }
 
         it("should not read JWTS token without secret") {
