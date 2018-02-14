@@ -8,7 +8,7 @@ import com.xenomachina.argparser.default
 import java.io.OutputStreamWriter
 import kotlin.system.exitProcess
 
-fun main(args: Array<String>)= wrapCommandBody {
+fun main(args: Array<String>) = wrapCommandBody {
 
     val rawArgs = RawArgs()
     val commandArgs = args.toList().filter {
@@ -97,7 +97,7 @@ class MainArgs(parser: ArgParser) {
     val command by parser.positional("COMMAND",
             help = "the command to excecute : ${Command.codes()}") {
         Command.fromCode(this)
-                ?: throw InvalidArgumentException("'${this}' is not a valid command. Must be one of theses ${Command.codes()}")
+                ?: throw InvalidArgumentException("'$this' is not a valid command. Must be one of theses ${Command.codes()}")
     }
 
     val commandArgs by parser.positionalList("ARGS",

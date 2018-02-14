@@ -1,7 +1,12 @@
 package com.github.leomillon.jwt.generator
 
 import com.xenomachina.argparser.InvalidArgumentException
-import io.jsonwebtoken.*
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.CompressionCodec
+import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.Header
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
 
 fun createToken(tokenParams: TokenParams): String {
 
@@ -32,8 +37,7 @@ fun readToken(token: String, base64EncodedSecret: String? = null, ignoreExpirati
             val tokenParts = token.split(".")
             val jwt = parser.parse("${tokenParts[0]}.${tokenParts[1]}.")
             ParsedToken(jwt.header, jwt.body, ignoredSignature = signatureIgnored)
-        }
-        else {
+        } else {
             base64EncodedSecret?.let { parser.setSigningKey(it) }
             val jwt = parser.parse(token)
             ParsedToken(jwt.header, jwt.body)

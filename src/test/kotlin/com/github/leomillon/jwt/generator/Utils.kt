@@ -4,7 +4,7 @@ import io.kotlintest.matchers.Matcher
 import io.kotlintest.matchers.Result
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.Date
 
 object Utils {
 

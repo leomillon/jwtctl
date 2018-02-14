@@ -13,7 +13,7 @@ import io.jsonwebtoken.SignatureAlgorithm
 import java.io.File
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.Date
 
 fun execGenerate(args: Array<String>) = wrapCommandBody(commandName = Command.CREATE.code) {
 
@@ -103,9 +103,8 @@ class CreateCmdArgs(parser: ArgParser) {
     }
             .default<Pair<SignatureAlgorithm, String>?>(null)
             .addValidator {
-                value?.let { if(!it.first.isHmac) throw InvalidArgumentException("Base64-encoded key bytes may only be specified for HMAC signatures") }
+                value?.let { if (!it.first.isHmac) throw InvalidArgumentException("Base64-encoded key bytes may only be specified for HMAC signatures") }
             }
-
 
     fun toTokenParams(): TokenParams {
 

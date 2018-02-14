@@ -88,7 +88,7 @@ jwtctl version SOME_TEST_VERSION
 
         it("No args should ask for the command operand") {
 
-            runCommandLine(expectedExitCode = 2) { out:String, err: String ->
+            runCommandLine(expectedExitCode = 2) { out: String, err: String ->
                 out shouldBe empty()
                 err shouldBe """
 jwtctl: missing COMMAND operand. See jwtctl --help
@@ -208,7 +208,7 @@ WARN  | !!! Token signature has been ignored !!!
 
         it("No args should ask for the token operand") {
 
-            runCommandLine(command, expectedExitCode = 2) { out:String, err: String ->
+            runCommandLine(command, expectedExitCode = 2) { out: String, err: String ->
                 out shouldBe empty()
                 err shouldBe """
 jwtctl read: missing TOKEN operand. See jwtctl read --help
@@ -221,13 +221,13 @@ jwtctl read: missing TOKEN operand. See jwtctl read --help
 
 fun empty(): Matcher<String> = match("")
 
-private fun runCommandLine(vararg args: String, expectedExitCode: Int = 0, logAssertions: (outLog: String, errLog:String) -> Unit = { _: String, _: String -> }) {
+private fun runCommandLine(vararg args: String, expectedExitCode: Int = 0, logAssertions: (outLog: String, errLog: String) -> Unit = { _: String, _: String -> }) {
     checkExitAndExtractLog({
         main(arrayOf(*args))
     }, expectedExitCode, logAssertions)
 }
 
-private fun checkExitAndExtractLog(workToDo: () -> Unit, expectedExitCode: Int, logAssertions: (outLog: String, errLog:String) -> Unit) {
+private fun checkExitAndExtractLog(workToDo: () -> Unit, expectedExitCode: Int, logAssertions: (outLog: String, errLog: String) -> Unit) {
     val statement: Statement = object : Statement() {
         override fun evaluate() {
             workToDo()
@@ -246,5 +246,3 @@ private fun checkExitAndExtractLog(workToDo: () -> Unit, expectedExitCode: Int, 
     systemErrRule.clearLog()
     systemOutRule.clearLog()
 }
-
-
