@@ -5,6 +5,7 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.InvalidArgumentException
 import com.xenomachina.argparser.default
 import io.jsonwebtoken.JwtException
+import java.io.File
 
 class ReadArgs(parser: ArgParser) {
 
@@ -15,10 +16,21 @@ class ReadArgs(parser: ArgParser) {
             help = "signature base64 encoded secret key")
             .default<String?>(null)
 
+    val publicKeyFile by parser.storing("-f", "--public-key-file",
+            help = "Public Key (PEM) file path") {
+        File(this)
+    }
+            .default<File?>(null)
+            .addValidator {
+                value?.let {
+                    if (!it.exists()) throw InvalidArgumentException("Unable to find file at path ${it.path}")
+                }
+            }
+
     val format by parser.mapping(
             "--standard" to OutputFormat.STANDARD,
             "--json" to OutputFormat.JSON,
-            help = "output format (default: ${OutputFormat.STANDARD}"
+            help = "output format (default: ${OutputFormat.STANDARD})"
     )
             .default(OutputFormat.STANDARD)
 
@@ -36,6 +48,7 @@ fun execRead(args: Array<String>) = wrapCommandBody(commandName = Command.READ.c
         val parsedJwt = readToken(
                 parsedArgs.token,
                 parsedArgs.secret,
+                parsedArgs.publicKeyFile,
                 ignoreExpiration = parsedArgs.ignoreExpiration,
                 ignoreSignature = parsedArgs.ignoreSignature)
         if (log.isInfoEnabled) {

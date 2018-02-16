@@ -38,7 +38,7 @@ fun toTokenParams(args: Array<String>) = ArgParser(args).parseInto(::CreateCmdAr
 
 class CreateCmdArgs(parser: ArgParser) {
 
-    val claimsFile by parser.storing("-f", "--claims-file",
+    private val claimsFile by parser.storing("-f", "--claims-file",
             help = "JSON claims file path") {
         File(this)
     }
@@ -49,14 +49,14 @@ class CreateCmdArgs(parser: ArgParser) {
                 }
             }
 
-    val claims by parser.option<MutableMap<String, String>>("-c", "--claim",
+    private val claims by parser.option<MutableMap<String, String>>("-c", "--claim",
             argNames = listOf("NAME", "VALUE"),
             help = "claim to add to jwt body (override claims from file)") {
         value.orElse { mutableMapOf<String, String>() }.apply { put(arguments[0], arguments[1]) }
     }
             .default(mutableMapOf<String, String>())
 
-    val headersFile by parser.storing("--headers-file",
+    private val headersFile by parser.storing("--headers-file",
             help = "JSON headers file path") {
         File(this)
     }
@@ -67,14 +67,14 @@ class CreateCmdArgs(parser: ArgParser) {
                 }
             }
 
-    val headers by parser.option<MutableMap<String, String>>("--header",
+    private val headers by parser.option<MutableMap<String, String>>("--header",
             argNames = listOf("NAME", "VALUE"),
             help = "header to add to jwt header (override headers from file)") {
         value.orElse { mutableMapOf<String, String>() }.apply { put(arguments[0], arguments[1]) }
     }
             .default(mutableMapOf<String, String>())
 
-    val duration by parser.storing("-d", "--duration",
+    private val duration by parser.storing("-d", "--duration",
             help = """
                 set the duration of the token (expiration date = now + duration).
                 Format : PTnHnMn.nS (ex: PT10H = 10 hours)
@@ -88,23 +88,49 @@ class CreateCmdArgs(parser: ArgParser) {
                 }
             }
 
-    val compressionCodec by parser.mapping(
+    private val compressionCodec by parser.mapping(
             "--deflate" to CompressionCodecs.DEFLATE,
             "--gzip" to CompressionCodecs.GZIP,
             help = "the compression codec to use")
             .default<CompressionCodec?>(null)
 
-    val signatureAlgorithm by parser.option<Pair<SignatureAlgorithm, String>?>("-s", "--signature",
-            argNames = listOf("ALGORITHM", "SECRET"),
-            help = "signature algorithm and base64 encoded secret key. Available algorithm : ${SignatureAlgorithm.values().filter { it.isHmac }.toList()}") {
+    private val hmacSignature by parser.option<Pair<SignatureAlgorithm, String>?>("--hmac-sign",
+            argNames = listOf("HMAC_ALG", "SECRET"),
+            help = """
+                HMAC signature algorithm and base64 encoded secret key.
+                Available algorithms : ${SignatureAlgorithm.values().filter { it.isHmac }.toList()}
+                """.trimIndent()) {
 
-        value?.let { throw IllegalArgumentException("Multiple signature algorithms in args") }
         value.orElse { Pair(SignatureAlgorithm.forName(arguments[0]), arguments[1]) }
     }
             .default<Pair<SignatureAlgorithm, String>?>(null)
             .addValidator {
-                value?.let { if (!it.first.isHmac) throw InvalidArgumentException("Base64-encoded key bytes may only be specified for HMAC signatures") }
+                value?.let { if (!it.first.isHmac) throw InvalidArgumentException("Invalid HMAC algorithm") }
             }
+
+    private val rsaSignature by parser.option<Pair<SignatureAlgorithm, File>?>("--rsa-sign",
+            argNames = listOf("RSA_ALG", "FILE_PATH"),
+            help = """
+                RSA signature algorithm and Private Key (PEM) file path.
+                Available algorithms : ${SignatureAlgorithm.values().filter { it.isRsa }.toList()}
+                """.trimIndent()) {
+
+        value.orElse { Pair(SignatureAlgorithm.forName(arguments[0]), File(arguments[1])) }
+    }
+            .default<Pair<SignatureAlgorithm, File>?>(null)
+            .addValidator {
+                value?.let {
+                    if (!it.first.isRsa) throw InvalidArgumentException("Invalid RSA algorithm")
+                    if (!it.second.exists()) throw InvalidArgumentException("Unable to find file at path ${it.second}")
+                }
+            }
+
+    private val pemFilePassword by parser.storing("-p", "--password",
+            help = """
+                the password of the encrypted PEM file.
+                Will be asked interactively if not provided via this parameter.
+                """.trimIndent())
+            .default<String?>(null)
 
     fun toTokenParams(): TokenParams {
 
@@ -139,11 +165,20 @@ class CreateCmdArgs(parser: ArgParser) {
 
         tokenHeaders.putAll(headers)
 
+        val passwordProvider = pemFilePassword
+                ?.let { { it.toCharArray() } }
+                ?: {
+                    print("Enter password ${rsaSignature?.second?.path?.let { "($it) " }}: ")
+                    Application.askPassword()
+                }
+
         return TokenParams(
                 claims = tokenClaims,
                 headers = Jwts.header(tokenHeaders),
-                signatureAlgAndSecret = signatureAlgorithm,
-                compressionCodec = compressionCodec
+                hmacAlgAndSecret = hmacSignature,
+                rsaAlgAndFile = rsaSignature,
+                compressionCodec = compressionCodec,
+                passwordProvider = passwordProvider
         )
     }
 }

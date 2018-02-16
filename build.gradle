@@ -45,6 +45,7 @@ dependencies {
   compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
   compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
   compile "com.natpryce:konfig:$konfig_version"
+  compile "org.bouncycastle:bcpkix-jdk15on:1.59"
 
   testCompile "io.kotlintest:kotlintest:$kotlintest_version"
   testCompile "org.jetbrains.spek:spek-api:$spek_version"

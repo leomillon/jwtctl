@@ -24,22 +24,24 @@ object ReadCmdSpec : Spek({
                 message shouldBe "Help was requested"
                 val help = StringWriter().apply { printUserMessage(this, "some_name", 0) }.toString()
                 help shouldBe """
-usage: some_name [-h] TOKEN [-s SECRET] [--standard] [--ignore-expiration] [--ignore-signature]
+usage: some_name [-h] TOKEN [-s SECRET] [-f PUBLIC_KEY_FILE] [--standard] [--ignore-expiration] [--ignore-signature]
 
 optional arguments:
-  -h, --help                   show this help message and exit
+  -h, --help                                              show this help message and exit
 
-  -s SECRET, --secret SECRET   signature base64 encoded secret key
+  -s SECRET, --secret SECRET                              signature base64 encoded secret key
 
-  --standard, --json           output format (default: STANDARD
+  -f PUBLIC_KEY_FILE, --public-key-file PUBLIC_KEY_FILE   Public Key (PEM) file path
 
-  --ignore-expiration          read the jwt claims/header even if the token is expired
+  --standard, --json                                      output format (default: STANDARD)
 
-  --ignore-signature           read the jwt claims/header even if the signature is invalid (displayed data cannot be trusted!!!)
+  --ignore-expiration                                     read the jwt claims/header even if the token is expired
+
+  --ignore-signature                                      read the jwt claims/header even if the signature is invalid (displayed data cannot be trusted!!!)
 
 
 positional arguments:
-  TOKEN                        the JWT token to read
+  TOKEN                                                   the JWT token to read
 
 """
                         .trimStart()
