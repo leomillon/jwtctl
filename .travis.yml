@@ -8,3 +8,25 @@ cache:
   directories:
   - $HOME/.m2
   - $HOME/.gradle
+
+deploy:
+  # tag deploy
+  - provider: releases
+    api_key: $GITHUB_TOKEN
+    file_glob: true
+    file: "$TRAVIS_BUILD_DIR/build/distributions/*"
+    skip_cleanup: true
+    draft: false
+    on:
+      tags: true
+  - provider: releases
+    api_key: $GITHUB_TOKEN
+    file_glob: true
+    file: "$TRAVIS_BUILD_DIR/build/distributions/*"
+    skip_cleanup: true
+    name: "DEV_LATEST"
+    body: "Last developement version"
+    draft: false
+    on:
+      branch: develop
+      tags: false
