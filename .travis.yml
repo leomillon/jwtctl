@@ -18,7 +18,6 @@ deploy:
     skip_cleanup: true
     draft: false
     on:
-      branch: release
       tags: true
   - provider: releases
     api_key: $GITHUB_TOKEN
