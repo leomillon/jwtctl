@@ -11,6 +11,7 @@ import com.natpryce.konfig.overriding
 import com.natpryce.konfig.stringType
 import mu.KotlinLogging
 import org.slf4j.LoggerFactory
+import java.util.Scanner
 
 val log = KotlinLogging.logger {}
 
@@ -22,6 +23,20 @@ class Application {
             systemProperties() overriding
                     EnvironmentVariables()
             ConfigurationProperties.fromResource("config.properties")
+        }
+
+        // Hack to test interactive System.console().readPassword() input
+        // In tests System.console() is null
+        fun askPassword(): CharArray {
+            val consolePassword = System.console()?.readPassword()
+
+            if (consolePassword != null) {
+                return consolePassword
+            }
+
+            val password = Scanner(System.`in`).next()
+            println()
+            return password.toCharArray()
         }
     }
 }

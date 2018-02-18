@@ -14,6 +14,7 @@ import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import java.io.StringWriter
 import java.time.Instant
+import java.util.Arrays
 
 object CreateCmdSpec : Spek({
 
@@ -25,25 +26,32 @@ object CreateCmdSpec : Spek({
                 message shouldBe "Help was requested"
                 val help = StringWriter().apply { printUserMessage(this, "some_name", 0) }.toString()
                 help shouldBe """
-usage: some_name [-h] [-f CLAIMS_FILE] [-c NAME VALUE] [--headers-file HEADERS_FILE] [--header NAME VALUE] [-d DURATION] [--deflate] [-s ALGORITHM SECRET]
+usage: some_name [-h] [-f CLAIMS_FILE] [-c NAME VALUE] [--headers-file HEADERS_FILE] [--header NAME VALUE] [-d DURATION] [--deflate] [--hmac-sign HMAC_ALG SECRET] [--rsa-sign RSA_ALG FILE_PATH] [-p PASSWORD]
 
 optional arguments:
-  -h, --help                                          show this help message and exit
+  -h, --help                                  show this help message and exit
 
-  -f CLAIMS_FILE, --claims-file CLAIMS_FILE           JSON claims file path
+  -f CLAIMS_FILE, --claims-file CLAIMS_FILE   JSON claims file path
 
-  -c NAME VALUE, --claim NAME VALUE                   claim to add to jwt body (override claims from file)
+  -c NAME VALUE, --claim NAME VALUE           claim to add to jwt body (override claims from file)
 
-  --headers-file HEADERS_FILE                         JSON headers file path
+  --headers-file HEADERS_FILE                 JSON headers file path
 
-  --header NAME VALUE                                 header to add to jwt header (override headers from file)
+  --header NAME VALUE                         header to add to jwt header (override headers from file)
 
-  -d DURATION, --duration DURATION                    set the duration of the token (expiration date = now + duration).
-                                                      Format : PTnHnMn.nS (ex: PT10H = 10 hours)
+  -d DURATION, --duration DURATION            set the duration of the token (expiration date = now + duration).
+                                              Format : PTnHnMn.nS (ex: PT10H = 10 hours)
 
-  --deflate, --gzip                                   the compression codec to use
+  --deflate, --gzip                           the compression codec to use
 
-  -s ALGORITHM SECRET, --signature ALGORITHM SECRET   signature algorithm and base64 encoded secret key. Available algorithm : [HS256, HS384, HS512]
+  --hmac-sign HMAC_ALG SECRET                 HMAC signature algorithm and base64 encoded secret key.
+                                              Available algorithms : [HS256, HS384, HS512]
+
+  --rsa-sign RSA_ALG FILE_PATH                RSA signature algorithm and Private Key (PEM) file path.
+                                              Available algorithms : [RS256, RS384, RS512, PS256, PS384, PS512]
+
+  -p PASSWORD, --password PASSWORD            the password of the encrypted PEM file.
+                                              Will be asked interactively if not provided via this parameter.
 
 """
                         .trimStart()
@@ -60,7 +68,7 @@ optional arguments:
             result.claims.size shouldBe 1
 
             result.headers.size shouldBe 0
-            result.signatureAlgAndSecret shouldBe null
+            result.hmacAlgAndSecret shouldBe null
             result.compressionCodec shouldBe null
         }
 
@@ -88,27 +96,87 @@ optional arguments:
             result.headers.size shouldBe 3
         }
 
-        it("should set HMAC signature algorithm and secret") {
-            val secret = "some_secret"
-            val result = toTokenParams(arrayOf("--signature", "HS512", secret))
+        describe("Signature features") {
 
-            result.signatureAlgAndSecret shouldNotBe null
-            result.signatureAlgAndSecret!!.first shouldBe SignatureAlgorithm.HS512
-            result.signatureAlgAndSecret!!.second shouldBe secret
-        }
+            it("should set HMAC signature algorithm and secret") {
+                forAll(
+                        SignatureAlgorithm
+                                .values()
+                                .filter { it.isHmac }
+                ) {
+                    val secret = "some_secret"
+                    val result = toTokenParams(arrayOf("--hmac-sign", it.name, secret))
 
-        it("should set HMAC signature algorithm and secret") {
-            forAll(listOf(
-                    SignatureAlgorithm.HS256,
-                    SignatureAlgorithm.HS384,
-                    SignatureAlgorithm.HS512
-            )) {
-                val secret = "some_secret"
-                val result = toTokenParams(arrayOf("--signature", it.name, secret))
+                    result.hmacAlgAndSecret shouldNotBe null
+                    result.hmacAlgAndSecret!!.first shouldBe it
+                    result.hmacAlgAndSecret!!.second shouldBe secret
+                }
+            }
 
-                result.signatureAlgAndSecret shouldNotBe null
-                result.signatureAlgAndSecret!!.first shouldBe it
-                result.signatureAlgAndSecret!!.second shouldBe secret
+            it("should get error for non-HMAC signature algorithms") {
+                forAll(
+                        SignatureAlgorithm
+                                .values()
+                                .filterNot { it.isHmac }
+                ) {
+                    val exception = shouldThrow<InvalidArgumentException> {
+                        toTokenParams(arrayOf("--hmac-sign", it.name, "some_secret"))
+                    }
+                    exception.message shouldBe "Invalid HMAC algorithm"
+                }
+            }
+
+            it("should set RSA signature algorithm and private") {
+                forAll(
+                        SignatureAlgorithm
+                                .values()
+                                .filter { it.isRsa }
+                ) {
+                    val pemFilePath = "/private_key_1.pem".resourcePath()
+                    val result = toTokenParams(arrayOf("--rsa-sign", it.name, pemFilePath))
+
+                    result.rsaAlgAndFile shouldNotBe null
+                    result.rsaAlgAndFile!!.first shouldBe it
+                    result.rsaAlgAndFile!!.second.path shouldBe pemFilePath
+                }
+            }
+
+            it("should get error for non-RSA signature algorithms") {
+                forAll(
+                        SignatureAlgorithm
+                                .values()
+                                .filterNot { it.isRsa }
+                ) {
+                    val exception = shouldThrow<InvalidArgumentException> {
+                        toTokenParams(arrayOf("--rsa-sign", it.name, "/private_key_1.pem".resourcePath()))
+                    }
+                    exception.message shouldBe "Invalid RSA algorithm"
+                }
+            }
+
+            it("should set password") {
+                val password = "changeit"
+                val result = toTokenParams(arrayOf("--password", password))
+
+                Arrays.equals(result.passwordProvider?.invoke()!!, password.toCharArray()) shouldBe true
+            }
+
+            describe("Interactive input") {
+
+                val password = "changeit"
+                beforeGroup {
+                    System.setIn(password.byteInputStream())
+                }
+
+                it("should have default password provider if not set") {
+                    val result = toTokenParams(emptyArray())
+
+                    Arrays.equals(result.passwordProvider?.invoke()!!, password.toCharArray()) shouldBe true
+                }
+
+                afterGroup {
+                    System.setIn(System.`in`)
+                }
             }
         }
 
@@ -120,22 +188,6 @@ optional arguments:
                 val result = toTokenParams(arrayOf(it.first))
 
                 result.compressionCodec shouldBe it.second
-            }
-        }
-    }
-
-    describe("Unsupported describes...") {
-        it("should get error for non-HMAC signature algorithms") {
-            forAll(listOf(
-                    SignatureAlgorithm.ES256,
-                    SignatureAlgorithm.RS256,
-                    SignatureAlgorithm.PS256,
-                    SignatureAlgorithm.NONE
-            )) {
-                val exception = shouldThrow<InvalidArgumentException> {
-                    toTokenParams(arrayOf("--signature", it.name, "some_secret"))
-                }
-                exception.message shouldBe "Base64-encoded key bytes may only be specified for HMAC signatures"
             }
         }
     }
