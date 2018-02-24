@@ -24,7 +24,7 @@ _jwtctl() {
                     return 0
                 ;;
                 "--rsa-sign")
-                    COMPREPLY=($(compgen -W "${HMAC_SIGN_VALUES}" -- ${cur}))
+                    COMPREPLY=($(compgen -W "${RSA_SIGN_VALUES}" -- ${cur}))
                     return 0
                 ;;
                 "RS256"|"RS384"|"RS512"|"PS256"|"PS384"|"PS512")
