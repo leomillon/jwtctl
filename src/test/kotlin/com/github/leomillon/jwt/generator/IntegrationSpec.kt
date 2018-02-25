@@ -107,9 +107,9 @@ jwtctl version SOME_TEST_VERSION
 
             runCommandLine(command, "--help") { out: String, err: String ->
                 out shouldBe """
-usage: jwtctl create [-h] [-f CLAIMS_FILE] [-c NAME VALUE] [--headers-file HEADERS_FILE]
-                     [--header NAME VALUE] [-d DURATION] [--deflate] [--hmac-sign HMAC_ALG SECRET]
-                     [--rsa-sign RSA_ALG FILE_PATH] [-p PASSWORD]
+usage: jwtctl create [-h] [-f CLAIMS_FILE] [-c NAME VALUE]... [--headers-file HEADERS_FILE]
+                     [--header NAME VALUE]... [-d DURATION] [--deflate]
+                     [--hmac-sign HMAC_ALG SECRET] [--rsa-sign RSA_ALG FILE_PATH] [-p PASSWORD]
 
 optional arguments:
   -h, --help                     show this help message and exit

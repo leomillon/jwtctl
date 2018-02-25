@@ -26,7 +26,7 @@ object CreateCmdSpec : Spek({
                 message shouldBe "Help was requested"
                 val help = StringWriter().apply { printUserMessage(this, "some_name", 0) }.toString()
                 help shouldBe """
-usage: some_name [-h] [-f CLAIMS_FILE] [-c NAME VALUE] [--headers-file HEADERS_FILE] [--header NAME VALUE] [-d DURATION] [--deflate] [--hmac-sign HMAC_ALG SECRET] [--rsa-sign RSA_ALG FILE_PATH] [-p PASSWORD]
+usage: some_name [-h] [-f CLAIMS_FILE] [-c NAME VALUE]... [--headers-file HEADERS_FILE] [--header NAME VALUE]... [-d DURATION] [--deflate] [--hmac-sign HMAC_ALG SECRET] [--rsa-sign RSA_ALG FILE_PATH] [-p PASSWORD]
 
 optional arguments:
   -h, --help                                  show this help message and exit

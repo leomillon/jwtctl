@@ -51,6 +51,7 @@ class CreateCmdArgs(parser: ArgParser) {
 
     private val claims by parser.option<MutableMap<String, String>>("-c", "--claim",
             argNames = listOf("NAME", "VALUE"),
+            isRepeating = true,
             help = "claim to add to jwt body (override claims from file)") {
         value.orElse { mutableMapOf<String, String>() }.apply { put(arguments[0], arguments[1]) }
     }
@@ -69,6 +70,7 @@ class CreateCmdArgs(parser: ArgParser) {
 
     private val headers by parser.option<MutableMap<String, String>>("--header",
             argNames = listOf("NAME", "VALUE"),
+            isRepeating = true,
             help = "header to add to jwt header (override headers from file)") {
         value.orElse { mutableMapOf<String, String>() }.apply { put(arguments[0], arguments[1]) }
     }
