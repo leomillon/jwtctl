@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/leomillon/jwtctl.svg?branch=master)](https://travis-ci.org/leomillon/jwtctl)
 [![GitHub (pre-)release](https://img.shields.io/github/release/leomillon/jwtctl/all.svg)](https://github.com/leomillon/jwtctl/releases)
 [![GitHub license](https://img.shields.io/github/license/leomillon/jwtctl.svg)](https://github.com/leomillon/jwtctl/blob/master/LICENSE.md)
+[![codebeat badge](https://codebeat.co/badges/8137ac27-6cce-496d-81cd-8ed414e94b71)](https://codebeat.co/projects/github-com-leomillon-jwtctl-master)
 
 A command line tool to read or create [JWT](https://jwt.io/) tokens written in [Kotlin](https://kotlinlang.org/).
 
